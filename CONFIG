@@ -1,0 +1,134 @@
+# Version 1.0
+
+## This file describes the syntax and the possible options that can be specified in the configuration file (which represents an experiment). ##
+
+# Lines starting with # are comments. #
+
+# Usage of the program: ./main -c experiment_file
+# The file example represents a minimal working example: ./main -c example 
+# This (CONFIG) file can also be passed as argument to the program: ./main -c CONFIG
+
+# General structure for the traces #
+
+[Traces]
+
+# The number of files containing traces
+files=1
+
+# The type of the traces:
+# f: 32 bit floating point
+# d: 64 bit floating point
+# i: 8 bit integer
+# u: unsigned 8 bit integer
+trace_type=f
+
+# Whether the input file (specified in trace below) needs to be transposed (done on-the-fly when reading the file) or not. 
+# When using this in combination with the Tracer and Deadpool project this option should be set to true.
+transpose=true
+
+# The first index in the time samples where to start computing correlation.
+index=0
+
+# The number of time samples starting from index to consider.
+nsamples=3000
+
+# The path to the (possibly multiple) files, their number of lines and columns. The dimensions are needed for the moment in order to know how to read the files and store them in memory. Syntax:
+# trace=path rows columns
+trace=tracefile 1000000 3000
+
+# General structure to create the guesses, it is essentially the same as for the traces. #
+# This are the known plaintexts, the tool will create from these plaintexts the guesses
+# automagically.
+
+[Guesses]
+files=1
+guess_type=u
+transpose=true
+
+guess=plaintext 1000000 16
+
+# General configuration options. #
+
+[General]
+
+# The number of threads used in the computation
+threads=8
+
+# The order of the attack.
+# 1: first-order (default)
+# 2: second-order, if window=1 corresponds to second order moment
+# n (>2): n-th order standardized moments 
+order=1
+
+# The return type of the correlation.
+return_type=double
+
+# The size of the window when computing 2-order CPA
+# Warning, window starts indexing at the position of the first index.
+# e.g. i=23, window=4 => 23, 24, 25, 26
+window=3
+
+# The algorithm to attack can be
+# AES
+# DES
+algorithm=AES
+
+# The position to attack, must be specified as a path to the file containing 
+# the corresponding lookup table. Warning, there is a specific trigger for DES
+position=LUT/AES_AFTER_SBOX
+
+# The switch specific to DES, specifying the layout of the lookup table
+# WARNING: If attacking multiple SBOXES, the layout must be the same 
+# among them
+# Can be either of
+# DES_8_64 : 8 arrays of 64 values
+# DES_32_16 : 32 arrays of 16 values, where the offset is selected with 
+#	the first and last bits of the internal 6-bit values, and the
+#	lookup is done on the 4 middle bits
+# DES_4_BITS : Ignores lookup table and just compute the correlation 
+#	before the SBOX on the 4 middle bits. However, one must still 
+#	specify a file in order for it to work
+# DES_6_BITS : Ignores lookup table and just compute the correlation 
+#	before the SBOX on the 6 bits. However, one must still 
+#	specify a file in order for it to work
+#des_switch=DES_8_64
+
+# The round to attack. Only the first (round=0) is supported for the moment.
+round=0
+
+# The number of the key byte to attack. Can be either an integer or "all"
+#bytenum=all
+bytenum=0
+
+# The bit number in the byte to attack. 
+# Options: none, all, <int>
+# Where int is 0, ..., 7 for AES and 0, ..., 3 for DES
+# Default (if unspecified) is none
+bitnum=all
+
+# The correct key if we know it. If unspecified, the program outputs
+# the highest correlation for all keys. If speficied, only outputs the
+# rank of the known key. This behavious is similar to inspector.
+# Might also be used later for known key attacks. 
+# Can be specified:
+#   as a single key byte (in decimal or in hexadecimal with 0x prefix),
+#   as the whole key in hex (0x8f f9 8b 4a 7a a3 5b 69 30 1c b2 a7 91 07 6b 7e)
+# WARNING: Specifying a single key byte does not work with DES, as we need
+#	the complete key to generate the round keys.
+#correct_key=100
+#correct_key=0x8f f9 8b 4a 7a a3 5b 69 30 1c b2 a7 91 07 6b 7e
+correct_key=0xaa
+
+# The memory available. Used with attack=50 only. Possible suffixes:
+# G: Giga
+# M: Mega
+memory=4G
+
+# The number of global correlation we keep track of.
+top=20
+
+# The separator for printing, if not specified, normal prints with many details
+# if something is specified, prints in the following format:
+# byte_number "sep" key_byte "sep" time "sep" key "sep" correlation
+# But this only works when the correct key specified
+#separator=, 
