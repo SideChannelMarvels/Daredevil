@@ -21,10 +21,11 @@
 #ifndef DES_H
 #define DES_H
 
-#define DES_8_64    0
-#define DES_32_16   1
-#define DES_4_BITS  2
-#define DES_6_BITS  4
+#define DES_8_64       0
+#define DES_8_64_ROUND 1
+#define DES_32_16      2
+#define DES_4_BITS     3
+#define DES_6_BITS     4
 
 template <class TypeGuess> int construct_guess_DES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t pos, uint16_t * sbox, uint32_t n_keys, int8_t bit);
 

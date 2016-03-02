@@ -82,6 +82,8 @@ position=LUT/AES_AFTER_SBOX
 # among them
 # Can be either of
 # DES_8_64 : 8 arrays of 64 values
+# DES_8_64_ROUND : same as DES_8_64 but target is round output, after
+#	recombination of SBOX output and half left state
 # DES_32_16 : 32 arrays of 16 values, where the offset is selected with 
 #	the first and last bits of the internal 6-bit values, and the
 #	lookup is done on the 4 middle bits

@@ -4,6 +4,7 @@
 /* Copyright (C) 2016                                                    */
 /* Original author:   Paul Bottinelli <paulbottinelli@hotmail.com>       */
 /* Contributors:      Joppe Bos <joppe_bos@hotmail.com>                  */
+/*                    Philippe Teuwen <phil@teuwen.org>                  */
 /*                                                                       */
 /* This program is free software: you can redistribute it and/or modify  */
 /* it under the terms of the GNU General Public License as published by  */
@@ -82,8 +83,7 @@ static const uint8_t DataExpansion[48] = {
   27, 28, 27, 28, 29, 30, 31,  0
 };
 
-/* PC1 with entries -1 as indexed starting at
- * 0 in c.
+/* PC1 with entries -1 as indexed starting at 0 in c.
  */
 static const uint8_t PC1[56] = {
   56, 48, 40, 32, 24, 16, 8, 0,
@@ -93,6 +93,15 @@ static const uint8_t PC1[56] = {
   30, 22, 14, 6, 61, 53, 45, 37,
   31, 21, 13, 5, 60, 52, 44, 36,
   28, 20, 12, 4, 27, 20, 11, 3
+};
+
+/* P with entries -1 as indexed starting at 0 in c.
+ */
+static const uint8_t P[32] = {
+  15, 6, 19, 20, 28, 11, 27, 16,
+  0, 14, 22, 25, 4, 17, 30, 9,
+  1, 7, 23, 13, 31, 26, 2, 8,
+  18, 12, 29, 5, 21, 10, 3, 24
 };
 
 /* Macros to work on individual bits
@@ -136,8 +145,7 @@ uint8_t get_4_middle_bits(uint8_t val)
   return (val & 0x1E) >> 1;
 }
 
-  static void
-permute(uint8_t *dst, const uint8_t *src,
+static void permute(uint8_t *dst, const uint8_t *src,
     const uint8_t * map, const int mapsize)
 {
   int bitcount;
@@ -152,6 +160,23 @@ permute(uint8_t *dst, const uint8_t *src,
   for (i = 0; i < bitcount; i++) {
     if (GETBIT(src, map[i]))
       SETBIT(dst, i);
+  }
+}
+static void permuteinv(uint8_t *dst, const uint8_t *src,
+    const uint8_t * map, const int mapsize)
+{
+  int bitcount;
+  int i;
+
+  /* Clear all bits in the destination. */
+  for (i = 0; i < mapsize; i++)
+    dst[i] = 0;
+
+  /* Set destination bit if the mapped source bit it set. */
+  bitcount = mapsize * 8;
+  for (i = 0; i < bitcount; i++) {
+    if (GETBIT(src, i))
+      SETBIT(dst, map[i]);
   }
 }
 /*
@@ -316,6 +341,13 @@ template <class TypeGuess> int construct_guess_DES (TypeGuess ***guess, Matrix *
     /* Initial permutation of the data block */
     permute(D, mem[i], InitialPermutation, 8);
 
+    uint8_t LP_1[4];    /* Left half pushed across P */
+
+    /* Push the left half of the data across P */
+    if (pos == DES_8_64_ROUND) {
+        permuteinv(LP_1, D, P, 4);
+    }
+
     /* The right half of the ciphertext block. */
     uint8_t *R = &(D[4]);
     uint8_t Rexp[6];    /* Expanded right half. */
@@ -344,6 +376,13 @@ template <class TypeGuess> int construct_guess_DES (TypeGuess ***guess, Matrix *
             (*guess)[j][i] = HW (sbox[(uint8_t) bytenum*64 + (Snum ^ j)]);
           } else if (bit >= 0) {  
             (*guess)[j][i] = (((sbox[(uint8_t) bytenum*64 + (Snum ^ j)])>>bit)&1);
+          }
+          break;
+        case DES_8_64_ROUND:
+          if (bit == -1) {
+            (*guess)[j][i] = HW (sbox[(uint8_t) bytenum*64 + (Snum ^ j)] ^ ((LP_1[bytenum >> 1]>>((1-(bytenum & 1))*4))&0xf));
+          } else if (bit >= 0) {
+            (*guess)[j][i] = (((sbox[(uint8_t) bytenum*64 + (Snum ^ j)] ^ ((LP_1[bytenum >> 1]>>((1-(bytenum & 1))*4))&0xf))>>bit)&1);
           }
           break;
         case DES_32_16:

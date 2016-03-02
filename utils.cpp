@@ -741,6 +741,8 @@ int load_config(Config & config, const char * conf_file)
       string tmp_switch = line.substr(line.find("=") + 1).c_str();
       if (!tmp_switch.compare("DES_8_64")){
         config.des_switch = DES_8_64;
+      }else if (!tmp_switch.compare("DES_8_64_ROUND")){
+        config.des_switch = DES_8_64_ROUND;
       }else if (!tmp_switch.compare("DES_32_16")){
         config.des_switch = DES_32_16;
       }else if (!tmp_switch.compare("DES_4_BITS")){
@@ -956,7 +958,7 @@ void print_config(Config &conf)
     }
     printf("\n");
     }
-    if (conf.des_switch == DES_8_64) printf("\tLookup table layout:\t [8x64]\n");
+    if ((conf.des_switch == DES_8_64)||(conf.des_switch == DES_8_64_ROUND)) printf("\tLookup table layout:\t [8x64]\n");
     else if (conf.des_switch == DES_32_16) printf("\tLookup table layout:\t [32x16]\n");
     else if (conf.des_switch == DES_4_BITS) printf("\tLookup table layout:\t [4]\n");
     else if (conf.des_switch == DES_6_BITS) printf("\tLookup table layout:\t [6]\n");
