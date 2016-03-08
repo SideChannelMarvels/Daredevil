@@ -263,7 +263,7 @@ int first_order(Config & conf)
             if (top_r_by_key[i] == correct_key) {
               if (n_keys - i - 1 < lowest_rank) {
                 lowest_rank = n_keys - i - 1;
-                best_out.clear();
+                best_out.str(std::string());  /* Clear best_out. */
                 best_out << "Best bit: " << bit << " rank: " << n_keys - i - 1 << "." << setw(-2) << top_r_by_key[i] << endl;
               }
             }
