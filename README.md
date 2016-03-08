@@ -21,7 +21,7 @@ This software only requires a compiler with OpenMP support (by default clang).
 E.g. on a Debian/Ubuntu environment, one can do:
 
 ```bash
-apt-get install --no-install-recommends clang make
+sudo apt-get install --no-install-recommends clang make
 ```
 
 ## Installation
@@ -44,8 +44,8 @@ You can uninstall it with:
 sudo make uninstall
 ```
 
-You can also specify the compiler with the CC variable as well as the
-installation prefix:
+You can also specify the compiler with the CC variable as well as an
+installation prefix else than the default /usr/local:
 
 ```bash
 make CC=g++
