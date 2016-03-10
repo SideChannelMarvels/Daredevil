@@ -284,12 +284,16 @@ int first_order(Config & conf)
      
       if (bit == bitsperbyte-1) {
         double sum_bit_cor_sort[256];
-        memcpy (sum_bit_cor_sort, sum_bit_cor, 256*sizeof(double));
-        sort (sum_bit_cor_sort, sum_bit_cor_sort + 256);
-        cout << "Best sorted: " << endl;
-        for (int i=0; i < 256; i++) {
-          if (sum_bit_cor_sort[255] == sum_bit_cor[i]) {
-            cout << "key byte #" << bn << " best guess: 0x" << hex << i << dec << " sum(abs(bit_correlations)): " << sum_bit_cor_sort[255] << endl;
+        memcpy (sum_bit_cor_sort, sum_bit_cor, n_keys*sizeof(double));
+        sort (sum_bit_cor_sort, sum_bit_cor_sort + n_keys);
+        int nbest=10; // TODO: make it a config parameter
+        cout << "Best " << nbest << " candidates for key byte #" << bn << " :" << endl;
+        for (int best=n_keys-1; best > n_keys -1 - nbest; best--) {
+          for (int i=0; i < n_keys; i++) {
+            if (sum_bit_cor_sort[best] == sum_bit_cor[i]) {
+              cout << setfill('0') << setw(2) << n_keys -1 - best << ": 0x" << setfill('0') << setw(2) << hex << i;
+              cout << dec << " sum(abs(bit_correlations)): " << sum_bit_cor_sort[best] << endl;
+            }
           }
         }
       }
