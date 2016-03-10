@@ -67,7 +67,7 @@ int construct_guess_AES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t b
 
   for (i=0; i < nrows; i++) {
     for (j=0; j < n_keys; j++) {
-        if (bit == -1) { /* No individual bits. */ 
+        if (bit == -1) { /* No individual bits. */
           (*guess)[j][i] = HW ((TypeGuess) sbox[ (uint8_t) mem[i][bytenum] ^ j ]);
         } else if (bit >= 0 && bit < 8) {
           (*guess)[j][i] = (TypeGuess) ((sbox[ (uint8_t) mem[i][bytenum] ^ j ] >> bit)&1);

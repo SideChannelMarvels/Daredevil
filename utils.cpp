@@ -643,7 +643,7 @@ int load_config(Config & config, const char * conf_file)
   config.sep = "";
   config.sbox = NULL;
   config.bitnum = -2;
-  
+
   while (getline(fin, line)) {
     if (line[0] == '#'){
       // The line is a comment so we just skip it.
@@ -854,9 +854,9 @@ int load_config(Config & config, const char * conf_file)
   /* Make sure that if a single bit is attacked, the parameter is not greater
    * than the number of bits of the target algorithm.
    */
-  if ((config.algo == ALG_DES && config.bitnum > 3) || (config.algo == ALG_AES && 
+  if ((config.algo == ALG_DES && config.bitnum > 3) || (config.algo == ALG_AES &&
               config.bitnum > 7)){
-    fprintf(stderr, "Error: Invalid target bit, value too large for %s.\n", 
+    fprintf(stderr, "Error: Invalid target bit, value too large for %s.\n",
             config.algo ? "DES" : "AES");
     return -1;
   }
@@ -908,7 +908,7 @@ void print_config(Config &conf)
 {
   printf("\n[CONFIGURATION]\n");
   printf("\n  [GENERAL]\n");
-    
+
   printf("\tNumber of threads:\t %i\n", conf.n_threads);
   printf("\tIndex first sample:\t %i\n", conf.index_sample);
   if (conf.n_samples)
@@ -930,12 +930,12 @@ void print_config(Config &conf)
     printf("\tBytenum:\t\t all\n");
   else
     printf("\tBytenum:\t\t %i\n", conf.bytenum);
-  if (conf.bitnum == -1) 
+  if (conf.bitnum == -1)
     printf ("\tTarget all bits individually.\n");
-  else if (conf.bitnum >= 0 && conf.bitnum < 8) 
+  else if (conf.bitnum >= 0 && conf.bitnum < 8)
     printf ("\tTarget bit number:\t %d\n", conf.bitnum);
   else conf.bitnum = -2;
-  
+
   printf("\tSecret Key:\t\t ");
 
   if (conf.key_size == 1 && conf.correct_key != -1)

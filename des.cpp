@@ -306,7 +306,7 @@ template <class TypeGuess> int construct_guess_DES (TypeGuess ***guess, Matrix *
   TypeGuess **mem = NULL;
   uint32_t i, nrows = 0;
   uint8_t j;
-  
+
   if (R != 0) {
     fprintf (stderr, "[ERROR]: construct_guess_DES: Currently only round 0 is supported.\n");
     return -1;
@@ -372,9 +372,9 @@ template <class TypeGuess> int construct_guess_DES (TypeGuess ***guess, Matrix *
        */
       switch (pos) {
         case DES_8_64:
-          if (bit == -1) { 
+          if (bit == -1) {
             (*guess)[j][i] = HW (sbox[(uint8_t) bytenum*64 + (Snum ^ j)]);
-          } else if (bit >= 0) {  
+          } else if (bit >= 0) {
             (*guess)[j][i] = (((sbox[(uint8_t) bytenum*64 + (Snum ^ j)])>>bit)&1);
           }
           break;

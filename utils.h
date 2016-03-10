@@ -428,7 +428,7 @@ struct Config {
   /* Separator for printing
    */
   string sep;
-  
+
   /* Do we want to target an individual bit?
    * If so, what bit?
    * -2 = none

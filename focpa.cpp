@@ -128,12 +128,12 @@ int first_order(Config & conf)
 
   /* We loop over all the key bytes.
    */
-  
+
   for (int bn = 0; bn < conf.key_size; bn++){
     ostringstream best_out;
     int lowest_rank = 16;
     double sum_bit_cor[256] = {0};
-    
+
     /* We keep time each key byte individually;
      */
     start = omp_get_wtime();
@@ -150,19 +150,19 @@ int first_order(Config & conf)
 
     /* Potentially attack each bit individually. */
     int bitsperbyte;
-    
+
     if (conf.algo == ALG_AES) bitsperbyte = 8;
     else if (conf.algo == ALG_DES) bitsperbyte = 4;
-    
+
     for (int bit=0; bit >= 0 && bit < bitsperbyte; bit=(bit!=-1)?bit+1:bit) {
       if (conf.bitnum == -2) bit = -1;
-      else if (conf.bitnum >= 0 && conf.bitnum != bit) continue; 
-    
+      else if (conf.bitnum >= 0 && conf.bitnum != bit) continue;
+
       if (conf.bitnum != -2) {
         if (conf.sep == "") printf("[ATTACK] Target bit number %i\n\n", bit);
         else if (conf.key_size > 1) printf("%i%s", bit, conf.sep.c_str());
       }
-      
+
       res = construct_guess (&fin_conf.mat_args->guess, conf.algo, conf.guesses, conf.n_file_guess, bn, conf.round, conf.des_switch, conf.sbox, conf.total_n_keys, bit);
       if (res < 0) {
         fprintf (stderr, "[ERROR] Constructing guess.\n");
@@ -257,7 +257,7 @@ int first_order(Config & conf)
       } else {
         if (conf.des_switch == DES_4_BITS) correct_key = get_4_middle_bits(conf.complete_correct_key[bn]);
         else correct_key = conf.complete_correct_key[bn];
-        
+
         if (conf.bitnum == -1) {
           sort(top_r_by_key, top_r_by_key + n_keys);
           for (int i = n_keys - 1; i >= 0; i--) {
@@ -269,7 +269,7 @@ int first_order(Config & conf)
               }
             }
           }
-        } else {        
+        } else {
           print_top_r(top_r_by_key, n_keys, correct_key, conf.sep);
         }
       }
@@ -278,10 +278,10 @@ int first_order(Config & conf)
       for (int i = n_keys - 1; i >= 0; i--) {
         if (key_guess_used[top_r_by_key[i].key] == 0) {
           key_guess_used[top_r_by_key[i].key] = 1;
-          sum_bit_cor[top_r_by_key[i].key] += abs(top_r_by_key[i].corr);          
+          sum_bit_cor[top_r_by_key[i].key] += abs(top_r_by_key[i].corr);
         }
       }
-     
+
       if (bit == bitsperbyte-1) {
         double sum_bit_cor_sort[256];
         memcpy (sum_bit_cor_sort, sum_bit_cor, n_keys*sizeof(double));
@@ -297,8 +297,8 @@ int first_order(Config & conf)
           }
         }
       }
-      
-      
+
+
       /* We reset the variables and arrays.
        */
       for (int k = 0; k < n_keys; k++){
@@ -321,8 +321,8 @@ int first_order(Config & conf)
       fflush(stdout);
     }
     if (conf.bitnum == -1) {
-      cout << best_out.str() << endl;  
-    } 
+      cout << best_out.str() << endl;
+    }
   }
   delete[] top_r_by_key;
   delete pqueue;
