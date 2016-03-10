@@ -295,7 +295,10 @@ int first_order(Config & conf)
           for (int i=0; (i < n_keys) && (best > n_keys -1 - nbest); i++) {
             if (sum_bit_cor_sort[best] == sum_bit_cor[i]) {
               cout << setfill(' ') << setw(2) << n_keys -1 - best << ": 0x" << setfill('0') << setw(2) << hex << i;
-              cout << setfill(' ') << dec << "  sum: " << sum_bit_cor_sort[best] << endl;
+              cout << setfill(' ') << dec << "  sum: " << setw(8) << left << sum_bit_cor_sort[best] << right;
+              if (i == correct_key)
+                cout << "  <==";
+              cout << endl;
               best--;
             }
           }
@@ -309,7 +312,10 @@ int first_order(Config & conf)
           for (int i=0; (i < n_keys) && (best > n_keys -1 - nbest); i++) {
             if (peak_bit_cor_sort[best] == peak_bit_cor[i]) {
               cout << setfill(' ') << setw(2) << n_keys -1 - best << ": 0x" << setfill('0') << setw(2) << hex << i;
-              cout << setfill(' ') << dec << " peak: " << peak_bit_cor_sort[best] << endl;
+              cout << setfill(' ') << dec << " peak: " << setw(8) << left << peak_bit_cor_sort[best] << right;
+              if (i == correct_key)
+                cout << "  <==";
+              cout << endl;
               best--;
             }
           }
