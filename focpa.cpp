@@ -133,6 +133,7 @@ int first_order(Config & conf)
     ostringstream best_out;
     int lowest_rank = 16;
     double sum_bit_cor[256] = {0};
+    double peak_bit_cor[256] = {0};
 
     /* We keep time each key byte individually;
      */
@@ -279,20 +280,35 @@ int first_order(Config & conf)
         if (key_guess_used[top_r_by_key[i].key] == 0) {
           key_guess_used[top_r_by_key[i].key] = 1;
           sum_bit_cor[top_r_by_key[i].key] += abs(top_r_by_key[i].corr);
+          if (abs(top_r_by_key[i].corr) > peak_bit_cor[top_r_by_key[i].key])
+            peak_bit_cor[top_r_by_key[i].key] = abs(top_r_by_key[i].corr);
         }
       }
 
       if (bit == bitsperbyte-1) {
+        int nbest=10; // TODO: make it a config parameter
         double sum_bit_cor_sort[256];
         memcpy (sum_bit_cor_sort, sum_bit_cor, n_keys*sizeof(double));
         sort (sum_bit_cor_sort, sum_bit_cor_sort + n_keys);
-        int nbest=10; // TODO: make it a config parameter
-        cout << "Best " << nbest << " candidates for key byte #" << bn << " :" << endl;
+        cout << "Best " << nbest << " candidates for key byte #" << bn << " according to sum(abs(bit_correlations)):" << endl;
         for (int best=n_keys-1; best > n_keys -1 - nbest; best--) {
           for (int i=0; i < n_keys; i++) {
             if (sum_bit_cor_sort[best] == sum_bit_cor[i]) {
               cout << setfill(' ') << setw(2) << n_keys -1 - best << ": 0x" << setfill('0') << setw(2) << hex << i;
-              cout << setfill(' ') << dec << " sum(abs(bit_correlations)): " << sum_bit_cor_sort[best] << endl;
+              cout << setfill(' ') << dec << "  sum: " << sum_bit_cor_sort[best] << endl;
+            }
+          }
+        }
+        cout << endl;
+        double peak_bit_cor_sort[256];
+        memcpy (peak_bit_cor_sort, peak_bit_cor, n_keys*sizeof(double));
+        sort (peak_bit_cor_sort, peak_bit_cor_sort + n_keys);
+        cout << "Best " << nbest << " candidates for key byte #" << bn << " according to highest abs(bit_correlations):" << endl;
+        for (int best=n_keys-1; best > n_keys -1 - nbest; best--) {
+          for (int i=0; i < n_keys; i++) {
+            if (peak_bit_cor_sort[best] == peak_bit_cor[i]) {
+              cout << setfill(' ') << setw(2) << n_keys -1 - best << ": 0x" << setfill('0') << setw(2) << hex << i;
+              cout << setfill(' ') << dec << " peak: " << peak_bit_cor_sort[best] << endl;
             }
           }
         }
