@@ -1000,12 +1000,13 @@ void print_top_r(Type corrs[], int n_keys, int correct_key, string csv)
   sort(corrs, corrs + n_keys);
   if (csv == ""){
   cout << "Rank" << setw(14) << "Correlation" << setw(7) << "Key" << setw(16) << "Sample(s)" << endl;
+  int nbest = 20; // TODO: make it a config parameter
   for (int i = n_keys - 1; i >= 0; i--) {
     // We start ranking at 0, to be consistant with inspector, otherwise n_keys-i
-    if (correct_key == -1)
-      cout << n_keys - i - 1 << "." << corrs[i] << endl;
+    if ((correct_key == -1) &&( i > n_keys -1 - nbest))
+      cout << setw(2) << n_keys - i - 1 << "." << corrs[i] << endl;
     else if (corrs[i] == correct_key)
-      cout << n_keys - i - 1 << "." << setw(-2) << corrs[i] << endl;
+      cout << setw(2) << n_keys - i - 1 << "." << setw(-2) << corrs[i] << endl;
   }
   cout << endl;
   cout << flush;

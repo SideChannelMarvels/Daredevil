@@ -171,7 +171,7 @@ struct CorrFirstOrder {
   }
 
   friend std::ostream& operator<<( std::ostream& out, const CorrFirstOrder& b ){
-    return out << setw(16) << b.corr << setw(6) << "0x" << setw(4) << left << hex << b.key << right << setw(8) << dec << b.time;
+    return out << setw(16) << b.corr << setw(6) << "0x" << setfill('0') << setw(2) << hex << b.key << setw(6) << setfill(' ') << right << setw(8) << dec << b.time;
   }
 
   void corr2str(string sep){

@@ -291,11 +291,12 @@ int first_order(Config & conf)
         for (int best=n_keys-1; best > n_keys -1 - nbest; best--) {
           for (int i=0; i < n_keys; i++) {
             if (sum_bit_cor_sort[best] == sum_bit_cor[i]) {
-              cout << setfill('0') << setw(2) << n_keys -1 - best << ": 0x" << setfill('0') << setw(2) << hex << i;
-              cout << dec << " sum(abs(bit_correlations)): " << sum_bit_cor_sort[best] << endl;
+              cout << setfill(' ') << setw(2) << n_keys -1 - best << ": 0x" << setfill('0') << setw(2) << hex << i;
+              cout << setfill(' ') << dec << " sum(abs(bit_correlations)): " << sum_bit_cor_sort[best] << endl;
             }
           }
         }
+        cout << endl;
       }
 
 
