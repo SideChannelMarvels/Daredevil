@@ -132,6 +132,7 @@ int first_order(Config & conf)
   for (int bn = 0; bn < conf.key_size; bn++){
     ostringstream best_out;
     int lowest_rank = 16;
+    double sum_bit_cor[256] = {0};
     
     /* We keep time each key byte individually;
      */
@@ -273,6 +274,27 @@ int first_order(Config & conf)
         }
       }
 
+      int key_guess_used[256] = {0};
+      for (int i = n_keys - 1; i >= 0; i--) {
+        if (key_guess_used[top_r_by_key[i].key] == 0) {
+          key_guess_used[top_r_by_key[i].key] = 1;
+          sum_bit_cor[top_r_by_key[i].key] += abs(top_r_by_key[i].corr);          
+        }
+      }
+     
+      if (bit == bitsperbyte-1) {
+        double sum_bit_cor_sort[256];
+        memcpy (sum_bit_cor_sort, sum_bit_cor, 256*sizeof(double));
+        sort (sum_bit_cor_sort, sum_bit_cor_sort + 256);
+        cout << "Best sorted: " << endl;
+        for (int i=0; i < 256; i++) {
+          if (sum_bit_cor_sort[255] == sum_bit_cor[i]) {
+            cout << "key byte #" << bn << " best guess: 0x" << hex << i << dec << " sum(abs(bit_correlations)): " << sum_bit_cor_sort[255] << endl;
+          }
+        }
+      }
+      
+      
       /* We reset the variables and arrays.
        */
       for (int k = 0; k < n_keys; k++){
