@@ -126,14 +126,19 @@ int first_order(Config & conf)
   FinalConfig<TypeTrace, TypeReturn, TypeGuess> fin_conf = FinalConfig<TypeTrace, TypeReturn, TypeGuess>(&mat_args, &conf, (void*)queues);
   pthread_mutex_init(&lock, NULL);
 
+  vector<CorrFirstOrder<TypeReturn>*> sum_bit_corels;
+  vector<CorrFirstOrder<TypeReturn>*> peak_bit_corels;
+  sum_bit_corels.push_back(new CorrFirstOrder<TypeReturn>[256]);
+  peak_bit_corels.push_back(new CorrFirstOrder<TypeReturn>[256]);
+  for (size_t i = 0; i < 256; i++) {
+      sum_bit_corels.back()[i].key = i;
+      peak_bit_corels.back()[i].key = i;
+  }
   /* We loop over all the key bytes.
    */
-
   for (int bn = 0; bn < conf.key_size; bn++){
     ostringstream best_out;
     int lowest_rank = 16;
-    double sum_bit_cor[256] = {0};
-    double peak_bit_cor[256] = {0};
 
     /* We keep time each key byte individually;
      */
@@ -273,51 +278,43 @@ int first_order(Config & conf)
       }
 
       int key_guess_used[256] = {0};
-      for (int i = n_keys - 1; i >= 0; i--) {
+      for (int i = 0; i < n_keys; i++) {
         if (key_guess_used[top_r_by_key[i].key] == 0) {
           key_guess_used[top_r_by_key[i].key] = 1;
-          sum_bit_cor[top_r_by_key[i].key] += abs(top_r_by_key[i].corr);
-          if (abs(top_r_by_key[i].corr) > peak_bit_cor[top_r_by_key[i].key])
-            peak_bit_cor[top_r_by_key[i].key] = abs(top_r_by_key[i].corr);
+          sum_bit_corels.back()[top_r_by_key[i].key].corr += abs(top_r_by_key[i].corr);
+          if (abs(top_r_by_key[i].corr) > peak_bit_corels.back()[top_r_by_key[i].key].corr)
+            peak_bit_corels.back()[top_r_by_key[i].key].corr = abs(top_r_by_key[i].corr);
         }
       }
 
       if (bit == bitsperbyte-1) {
         int nbest=10; // TODO: make it a config parameter
-        double sum_bit_cor_sort[256];
-        memcpy (sum_bit_cor_sort, sum_bit_cor, n_keys*sizeof(double));
-        sort (sum_bit_cor_sort, sum_bit_cor_sort + n_keys);
+        sort (sum_bit_corels.back(), sum_bit_corels.back() + n_keys);
+        sort (peak_bit_corels.back(), peak_bit_corels.back() + n_keys);
         cout << "Best " << nbest << " candidates for key byte #" << bn << " according to sum(abs(bit_correlations)):" << endl;
-        for (int best=n_keys-1; best > n_keys -1 - nbest;) {
-          for (int i=0; (i < n_keys) && (best > n_keys -1 - nbest); i++) {
-            if (sum_bit_cor_sort[best] == sum_bit_cor[i]) {
-              cout << setfill(' ') << setw(2) << n_keys -1 - best << ": 0x" << setfill('0') << setw(2) << hex << i;
-              cout << setfill(' ') << dec << "  sum: " << setw(8) << left << sum_bit_cor_sort[best] << right;
-              if (i == correct_key)
-                cout << "  <==";
-              cout << endl;
-              best--;
-            }
-          }
+        for (int i = 1; i <= nbest; i++) {
+          cout << setfill(' ') << setw(2) << i << ": 0x" << setfill('0') << setw(2) << hex << sum_bit_corels.back()[n_keys-i].key;
+          cout << setfill(' ') << dec << "  sum: " << setw(8) << left << sum_bit_corels.back()[n_keys-i].corr << right;
+          if (sum_bit_corels.back()[n_keys-i].key == correct_key)
+            cout << "  <==";
+          cout << endl;
         }
         cout << endl;
-        double peak_bit_cor_sort[256];
-        memcpy (peak_bit_cor_sort, peak_bit_cor, n_keys*sizeof(double));
-        sort (peak_bit_cor_sort, peak_bit_cor_sort + n_keys);
         cout << "Best " << nbest << " candidates for key byte #" << bn << " according to highest abs(bit_correlations):" << endl;
-        for (int best=n_keys-1; best > n_keys -1 - nbest;) {
-          for (int i=0; (i < n_keys) && (best > n_keys -1 - nbest); i++) {
-            if (peak_bit_cor_sort[best] == peak_bit_cor[i]) {
-              cout << setfill(' ') << setw(2) << n_keys -1 - best << ": 0x" << setfill('0') << setw(2) << hex << i;
-              cout << setfill(' ') << dec << " peak: " << setw(8) << left << peak_bit_cor_sort[best] << right;
-              if (i == correct_key)
-                cout << "  <==";
-              cout << endl;
-              best--;
-            }
-          }
+        for (int i = 1; i <= nbest; i++) {
+          cout << setfill(' ') << setw(2) << i << ": 0x" << setfill('0') << setw(2) << hex << peak_bit_corels.back()[n_keys-i].key;
+          cout << setfill(' ') << dec << "  peak: " << setw(8) << left << peak_bit_corels.back()[n_keys-i].corr << right;
+          if (peak_bit_corels.back()[n_keys-i].key == correct_key)
+            cout << "  <==";
+          cout << endl;
         }
         cout << endl;
+        sum_bit_corels.push_back(new CorrFirstOrder<TypeReturn>[256]);
+        peak_bit_corels.push_back(new CorrFirstOrder<TypeReturn>[256]);
+        for (size_t i = 0; i < 256; i++) {
+          sum_bit_corels.back()[i].key = i;
+          peak_bit_corels.back()[i].key = i;
+        }
       }
 
 
@@ -346,6 +343,27 @@ int first_order(Config & conf)
       cout << best_out.str() << endl;
     }
   }
+
+  /* If the key is unknown, display the likely candidates.
+  */
+  if (conf.complete_correct_key == NULL) {
+      cout << "Most probable key sum(abs): ";
+      for (size_t i = 0; i < sum_bit_corels.size()-1; i++) {
+          cout << setfill('0') << setw(2) << hex << sum_bit_corels[i][n_keys-1].key << ' ';
+      }
+      cout << endl;
+      cout << "Most probable key max(abs): ";
+      for (size_t i = 0; i < peak_bit_corels.size()-1; i++) {
+          cout << setfill('0') << setw(2) << hex << peak_bit_corels[i][n_keys-1].key << ' ';
+      }
+      cout << endl;
+  }
+
+  for (size_t i = 0; i < sum_bit_corels.size(); i++) {
+      delete sum_bit_corels[i];
+      delete peak_bit_corels[i];
+  }
+
   delete[] top_r_by_key;
   delete pqueue;
   delete queues;
