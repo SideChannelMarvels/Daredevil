@@ -139,10 +139,7 @@ int first_order(Config & conf)
      */
     start = omp_get_wtime();
 
-    if (conf.key_size == 1){
-      bn = conf.bytenum;
-    }
-    else if (conf.bytenum != -1 && conf.bytenum != bn){
+    if (conf.bytenum != -1 && conf.bytenum != bn){
       continue;
     }
 
@@ -249,13 +246,13 @@ int first_order(Config & conf)
       /* Warning, when using DES, the correct key doesn't correspond to the actual
        * good key, as we are predicting the input state based on a round key.
        */
-      int correct_key;
-      if (conf.key_size == 1) {
+      int correct_key = -1;
+      if (conf.key_size == 1 && conf.correct_key != -1) {
         if (conf.des_switch == DES_4_BITS && conf.correct_key != -1) correct_key = get_4_middle_bits(conf.correct_key);
         else correct_key = conf.correct_key;
         pqueue->print(conf.top, correct_key);
         print_top_r(top_r_by_key, n_keys, correct_key);
-      } else {
+      } else if (conf.complete_correct_key != NULL) {
         if (conf.des_switch == DES_4_BITS) correct_key = get_4_middle_bits(conf.complete_correct_key[bn]);
         else correct_key = conf.complete_correct_key[bn];
 

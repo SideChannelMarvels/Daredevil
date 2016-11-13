@@ -637,12 +637,14 @@ int load_config(Config & config, const char * conf_file)
   config.transpose_traces = true;
   config.transpose_guesses = true;
   config.memory = 4*GIGA;
-  config.key_size = 1;
+  config.key_size = 0;
   config.top = 50;
   config.des_switch = DES_8_64;
   config.sep = "";
   config.sbox = NULL;
   config.bitnum = -2;
+  config.complete_correct_key = NULL;
+  config.original_correct_key = NULL;
 
   while (getline(fin, line)) {
     if (line[0] == '#'){
@@ -815,14 +817,6 @@ int load_config(Config & config, const char * conf_file)
 
   }
 
-  /* This should be removed as we may want to do it. But if we do remove it,
-   * we get an error because it tries to start at bytenum -1.
-   */
-  if (config.bytenum == -1 && config.key_size <= 1){
-    fprintf(stderr, "Error: Cannot compute on *all* key bytes if the complete key is unspecified.\n");
-    return -1;
-  }
-
   /* config.correct = -1 is the default value. It stays -1 if no key is
    * specified or if the complete key is specified. But if only one byte
    * is set, we artificially set it to -1. I don't know why..
@@ -859,6 +853,17 @@ int load_config(Config & config, const char * conf_file)
     fprintf(stderr, "Error: Invalid target bit, value too large for %s.\n",
             config.algo ? "DES" : "AES");
     return -1;
+  }
+
+  /* If the correct key is unknown then we set the key size to the algorithm default.
+   */
+  if (config.key_size == 0) {
+    if(config.algo == ALG_DES) {
+        config.key_size = 8;
+    }
+    if(config.algo == ALG_AES) {
+        config.key_size = 16;
+    }
   }
 
   /* Logic to compute the total number of traces, time samples and key guesses.
@@ -940,7 +945,7 @@ void print_config(Config &conf)
 
   if (conf.key_size == 1 && conf.correct_key != -1)
     printf("%#x\n", conf.correct_key);
-  else if (conf.key_size > 1){
+  else if (conf.complete_correct_key != NULL) {
     printf("0x");
     for(int i = 0; i < conf.key_size; i++) {
       printf("%02x ", conf.algo ? conf.original_correct_key[i] : conf.complete_correct_key[i]);
@@ -951,7 +956,7 @@ void print_config(Config &conf)
     printf("Unspecified\n");
 
   if (conf.algo == ALG_DES){
-    if(conf.key_size > 1) {
+    if(conf.key_size > 1 && conf.complete_correct_key != NULL) {
     printf("\tRound Key:\t\t 0x");
     for(int i = 0; i < conf.key_size; i++) {
       printf("%02x ", conf.complete_correct_key[i]);
