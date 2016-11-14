@@ -451,7 +451,7 @@ vector<pair<T,string>> getTopFullKeys(vector<CorrFirstOrder<T>*> &candidates, si
         for(size_t i = 0; i < candidates.size(); i++) {
             if(limit[i] < n_keys) {
                 // Evaluate the correlation drop of the next candidate of this key byte
-                T drop = candidates[i][n_keys - limit[i]].corr - candidates[i][n_keys - limit[i] - 1].corr;
+                T drop = candidates[i][n_keys - 1].corr - candidates[i][n_keys - limit[i] - 1].corr;
                 if(drop < lowest_drop) {
                     lowest_drop = drop;
                     lowest_drop_idx = i;
