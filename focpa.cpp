@@ -128,18 +128,17 @@ int first_order(Config & conf)
 
   vector<CorrFirstOrder<TypeReturn>*> sum_bit_corels;
   vector<CorrFirstOrder<TypeReturn>*> peak_bit_corels;
-  sum_bit_corels.push_back(new CorrFirstOrder<TypeReturn>[256]);
-  peak_bit_corels.push_back(new CorrFirstOrder<TypeReturn>[256]);
-  for (size_t i = 0; i < 256; i++) {
-      sum_bit_corels.back()[i].key = i;
-      peak_bit_corels.back()[i].key = i;
-  }
   /* We loop over all the key bytes.
    */
   for (int bn = 0; bn < conf.key_size; bn++){
     ostringstream best_out;
     int lowest_rank = 16;
-
+    sum_bit_corels.push_back(new CorrFirstOrder<TypeReturn>[256]);
+    peak_bit_corels.push_back(new CorrFirstOrder<TypeReturn>[256]);
+    for (size_t i = 0; i < 256; i++) {
+      sum_bit_corels.back()[i].key = i;
+      peak_bit_corels.back()[i].key = i;
+    }
     /* We keep time each key byte individually;
      */
     start = omp_get_wtime();
@@ -309,12 +308,6 @@ int first_order(Config & conf)
           cout << endl;
         }
         cout << endl;
-        sum_bit_corels.push_back(new CorrFirstOrder<TypeReturn>[256]);
-        peak_bit_corels.push_back(new CorrFirstOrder<TypeReturn>[256]);
-        for (size_t i = 0; i < 256; i++) {
-          sum_bit_corels.back()[i].key = i;
-          peak_bit_corels.back()[i].key = i;
-        }
       }
 
 
@@ -347,17 +340,18 @@ int first_order(Config & conf)
   /* If the key is unknown, display the likely candidates.
   */
   if (conf.complete_correct_key == NULL) {
-      cout << "Most probable key sum(abs): ";
-      for (size_t i = 0; i < sum_bit_corels.size()-1; i++) {
-          cout << setfill('0') << setw(2) << hex << sum_bit_corels[i][n_keys-1].key << ' ';
+      cout << "Most probable key sum(abs):" << endl;
+      vector<pair<TypeReturn, string>> top_keys = getTopFullKeys(sum_bit_corels, n_keys, 10);
+      for (size_t i = 0; i < top_keys.size(); i++) {
+          cout << i+1 << ": " << top_keys[i].first << ": " << top_keys[i].second << endl;
       }
       cout << endl;
-      cout << "Most probable key max(abs): ";
-      for (size_t i = 0; i < peak_bit_corels.size()-1; i++) {
-          cout << setfill('0') << setw(2) << hex << peak_bit_corels[i][n_keys-1].key << ' ';
+      cout << "Most probable key max(abs):" << endl;
+      top_keys = getTopFullKeys(peak_bit_corels, n_keys, 10);
+      for (size_t i = 0; i < top_keys.size(); i++) {
+          cout << i+1 << ": " << top_keys[i].first << ": " << top_keys[i].second << endl;
       }
-      cout << endl;
-  }
+}
 
   for (size_t i = 0; i < sum_bit_corels.size(); i++) {
       delete sum_bit_corels[i];
@@ -435,6 +429,79 @@ void * correlation_first_order(void * args_in)
   }
   free (q);
   return NULL;
+}
+
+template <class T> T productReduce(vector<T> &xs) {
+    T acc = 1;
+    for(const T &x: xs) {
+        acc *= x;
+    }
+    return acc;
+}
+
+template <class T>
+vector<pair<T,string>> getTopFullKeys(vector<CorrFirstOrder<T>*> &candidates, size_t n_keys, size_t topn) {
+    vector<size_t> limit = vector<size_t>(candidates.size(), 1);
+    vector<pair<T,string>> top_keys;
+    // Find the smallest set of high probability candidates which result in a key space of at least topn
+    while(productReduce(limit) <= topn) {
+        // Find the lowest correlation drop across all key bytes
+        T lowest_drop = 1000000;
+        size_t lowest_drop_idx = candidates.size();
+        for(size_t i = 0; i < candidates.size(); i++) {
+            if(limit[i] < n_keys) {
+                // Evaluate the correlation drop of the next candidate of this key byte
+                T drop = candidates[i][n_keys - limit[i]].corr - candidates[i][n_keys - limit[i] - 1].corr;
+                if(drop < lowest_drop) {
+                    lowest_drop = drop;
+                    lowest_drop_idx = i;
+                }
+            }
+        }
+        // Augment the limit by one on the lowest correlation drop
+        if(lowest_drop_idx < candidates.size()) {
+            limit[lowest_drop_idx] += 1;
+        }
+    }
+    // Compute all the key possibilities for this key space
+    vector<size_t> idx = vector<size_t>(limit.size(), 0);
+    bool exhausted = false;
+    while(!exhausted) {
+        // Compute a full key and its correlation sum
+        T correlation = 0;
+        string full_key;
+        full_key.reserve(candidates.size() * 2 + 1);
+        for(size_t i = 0; i < candidates.size(); i++) {
+            char buf[8];
+            correlation += candidates[i][n_keys - idx[i] - 1].corr;
+            snprintf(buf, 8, "%02hhx", (unsigned char) candidates[i][n_keys - idx[i] - 1].key);
+            full_key.append(buf);
+        }
+        top_keys.push_back(make_pair(correlation, full_key));
+        // Increment to the next full key in the restricted key space
+        for(size_t i = 0; i < idx.size(); i++) {
+            idx[i] += 1;
+            // If overflow limit, carry to the next key byte
+            if(idx[i] >= limit[i]) {
+                idx[i] = 0;
+                // If overflow last key byte, restricted key space exhausted
+                if(i == idx.size() - 1) {
+                    exhausted = true;
+                }
+            }
+            // No carry, we stop the increment
+            else {
+                break;
+            }
+        }
+    }
+    // Finally we sort the candidates and keep the topn
+    sort(top_keys.begin(), top_keys.end(), [](const pair<T,string> &a, const pair<T,string> &b) {
+        return a.first > b.first;
+    });
+    top_keys.resize(topn);
+
+    return top_keys;
 }
 
 template int first_order<float, double, uint8_t>(Config & conf);
