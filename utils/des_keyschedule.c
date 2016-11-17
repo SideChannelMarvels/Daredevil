@@ -15,11 +15,11 @@ int main(int argc, char **argv) {
     round_key = key;
     key_schedule(&round_key, &next_key, 0);
     printf("Round key: %016" PRIx64 "\n", round_key);
-    printf("Reversing round key ...\n");
+    printf("Reversing round key...\n");
     reverse_key_schedule(round_key, 0, possible_keys);
     for(int i = 0; i < 256; i++) {
         printf("%016" PRIx64 "\n", possible_keys[i]);
-        if(possible_keys[i] == key) {
+        if((possible_keys[i] & 0x00000000fefefefefefe) == (key & 0x00000000fefefefefefe)) {
             printf("Key found at offset %d!\n", i);
             return 0;
         }
