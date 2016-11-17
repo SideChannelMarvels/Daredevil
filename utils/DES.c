@@ -365,7 +365,7 @@ void rounds(uint64_t *data, uint64_t key)
         {
             if( ((right_block << (6 * ii + jj)) & FIRSTBIT) == FIRSTBIT)
             {
-                coordy += 2^(4 - jj);
+                coordy += 1<<(4 - jj);
             }
         }
     
