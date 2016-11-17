@@ -1,4 +1,5 @@
 CC=gcc
+CFLAGS=-Wall
 PREFIX=/usr/local
 BINS=aes_keyschedule des_keyschedule
 
