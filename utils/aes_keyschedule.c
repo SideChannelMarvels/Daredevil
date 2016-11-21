@@ -51,6 +51,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 /*****************************************************************************/
@@ -58,22 +59,16 @@
 /*****************************************************************************/
 // The number of columns comprising a state in AES. This is a constant in AES. Value=4
 #define Nb 4
-// The number of 32 bit words in a key.
-#define Nk 4
-// Key length in bytes [128 bit]
-#define KEYLEN 16
-// The number of rounds in AES Cipher.
-#define Nr 10
 
 /*****************************************************************************/
 /* Private variables:                                                        */
 /*****************************************************************************/
 // state - array holding the intermediate results during decryption.
 // The array that stores the round keys.
-static uint8_t RoundKey[176];
+static uint8_t RoundKey[240];
 
 // The Key input to the AES Program
-static uint8_t Key[16];
+static uint8_t Key[32];
 
 // The lookup-tables are marked const so they can be placed in read-only storage instead of RAM
 // The numbers below can be computed dynamically trading ROM for RAM - 
@@ -104,11 +99,15 @@ static const uint8_t Rcon[11] = { 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40
 
 
 // This function produces Nb(Nr+1) round keys. The round keys are used in each round to decrypt the states. 
-void KeyExpansion(uint8_t start)
+void KeyExpansion(uint8_t start, uint16_t AesSize)
 {
+
   uint32_t i, j, k;
   uint8_t tempa[4]; // Used for the column/row operations
-  start *=Nk;
+  uint8_t Nk = AesSize / 32;
+  // Nr: The number of rounds in AES Cipher: 10, 12 or 14
+  uint8_t Nr = Nk+6;
+  start *=4;
   // The first round key is the key itself.
   for(i = start; i < (Nk+start); ++i)
   {
@@ -166,7 +165,7 @@ void KeyExpansion(uint8_t start)
     RoundKey[i * 4 + 2] = RoundKey[(i - Nk) * 4 + 2] ^ tempa[2];
     RoundKey[i * 4 + 3] = RoundKey[(i - Nk) * 4 + 3] ^ tempa[3];
   }
-  for(i=start+3; i>3; i--)
+  for(i=(Nk+start-1); i>(Nk-1); i--)
   {
     for(j = 0; j < 4; ++j)
     {
@@ -214,7 +213,7 @@ void KeyExpansion(uint8_t start)
     RoundKey[(i - Nk) * 4 + 2] = RoundKey[i * 4 + 2] ^ tempa[2];
     RoundKey[(i - Nk) * 4 + 3] = RoundKey[i * 4 + 3] ^ tempa[3];
   }
-  for(j = 0; j < 16*11; ++j)
+  for(j = 0; j < 16*(Nr+1); ++j)
   {
     if (j%16==0)
       printf("K%02i: ", j/16);
@@ -239,10 +238,31 @@ int main(int argc, char *argv[])
     uint8_t round=0;
     if (argc<2) {
         printf("Usage: \n%s AES_key_in_hex\n", argv[0]);
-        printf("%s Round_key_in_hex Round_key_number_between_0_and_10\n", argv[0]);
+        printf("%s Round_key(s)_in_hex Initial_round_key_number_between_0_and_10#11#13\n", argv[0]);
+        printf("Examples:\n");
+        printf("- AES-128: (provide 1 round key)\n");
+        printf("  %s B1BA2737C83233FE7F7A7DF0FBB01D4A\n", argv[0]);
+        printf("  %s 97F926D5677B324AC439D77C8B03FDF8 5\n", argv[0]);
+        printf("  %s FAEF63792F9A97A1FB78C88C4CA7048F 10\n", argv[0]);
+        printf("- AES-192: (provide 1.5 round keys)\n");
+        printf("  %s B1BA2737C83233FE7F7A7DF0FBB01D4A7835FA62BE9726A1\n", argv[0]);
+        printf("  %s D42AAFEB1510F368D8AA1354A707697696D6CC20F7737995 5\n", argv[0]);
+        printf("  %s 504B601C4EEB5C33B3D208B8E4966BA37B07118538961350 11\n", argv[0]);
+        printf("  Tip: check if the second half round key is the same as yours. If not => AES-256\n");
+        printf("- AES-256: (provide 2 round keys)\n");
+        printf("  %s B1BA2737C83233FE7F7A7DF0FBB01D4A7835FA62BE9726A1BB39F261BAC4729C\n", argv[0]);
+        printf("  %s F2E96B6FD53C1BBB49D0990E6FF86927DF8F909C21310695C43D2751C133AC12 5\n", argv[0]);
+        printf("  %s 4D69A4975189FCA00DB0AC8F686EE58C033BE6307A3C13C226DF38591EEAC857 13\n", argv[0]);
         return EXIT_FAILURE;
     }
-    for(i = 0; i < 32; i += 2)
+
+    uint32_t arglen = strlen(argv[1]);
+    if( (arglen != 32) && (arglen != 48) && (arglen != 64)) {
+        printf("Error: AES_key must be 16, 24 or 32-byte long\n");
+        return EXIT_FAILURE;
+    }
+    uint16_t AesSize = arglen * 4;
+    for(i = 0; i < arglen; i += 2)
     {
         if(is_hex_char(argv[1][i]) == 0 || is_hex_char(argv[1][i + 1]) == 0)
             return EXIT_FAILURE;
@@ -253,7 +273,8 @@ int main(int argc, char *argv[])
         };
         Key[ i / 2] = strtoul((const char*)str_bytes, NULL, 16);
     }
+
     if (argc > 2)
         round = atoi(argv[2]);
-    KeyExpansion(round);
+    KeyExpansion(round, AesSize);
 }
