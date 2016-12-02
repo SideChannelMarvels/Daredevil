@@ -11,7 +11,7 @@ HEADERS = $(wildcard *.h)
 
 TARGET_OBJECTS=$(filter-out $(TEST).o, $(OBJECTS))
 
-.PHONY: default all clean check install uninstall utils install_utils
+.PHONY: default all clean check install uninstall
 
 all: $(TARGET) utils
 
@@ -24,7 +24,7 @@ $(TARGET): $(TARGET_OBJECTS)
 clean:
 	@-rm -f *.o daredevil
 
-install: install_utils
+install:
 	@cp $(TARGET) $(PREFIX)/bin/
 	@mkdir -p $(RESOURCES)
 	@cp -a LUT $(RESOURCES)
@@ -32,9 +32,3 @@ install: install_utils
 uninstall:
 	@rm $(PREFIX)/bin/$(TARGET)
 	@rm -rf $(PREFIX)/share/daredevil
-
-utils:
-	@cd utils && $(MAKE)
-
-install_utils:
-	@cd utils && $(MAKE) install
