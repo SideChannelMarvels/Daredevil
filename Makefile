@@ -13,7 +13,7 @@ TARGET_OBJECTS=$(filter-out $(TEST).o, $(OBJECTS))
 
 .PHONY: default all clean check install uninstall
 
-all: $(TARGET) utils
+all: $(TARGET)
 
 %.o: %.cpp $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
