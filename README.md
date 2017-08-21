@@ -21,7 +21,7 @@ This software only requires a compiler with OpenMP support (by default clang).
 E.g. on a Debian/Ubuntu environment, one can do:
 
 ```bash
-sudo apt-get install --no-install-recommends clang make
+sudo apt-get install --no-install-recommends clang make libomp-dev
 ```
 
 ## Installation
