@@ -105,7 +105,7 @@ bytenum=0
 # The bit number in the byte to attack. 
 # Options: none, all, <int>
 # Where int is 0, ..., 7 for AES and 0, ..., 3 for DES
-# Default (if unspecified) is none
+# Default (if unspecified) is none = Hamming Weight
 bitnum=all
 
 # The correct key if we know it. If unspecified, the program outputs
