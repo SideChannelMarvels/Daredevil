@@ -286,7 +286,10 @@ int first_order(Config & conf)
         }
       }
 
-      if ( (bit == bitsperbyte-1) || (bit == -1) ) {
+    if ( ((conf.bitnum == -1) && (bit == bitsperbyte-1))      // 'all' case
+	      || ((conf.bitnum != -1) && (bit >= 0))    // single bit case
+	      || (conf.bitnum == -2))                   // 'none' case
+    {
         int nbest=10; // TODO: make it a config parameter
         sort (sum_bit_corels.back(), sum_bit_corels.back() + n_keys);
         sort (peak_bit_corels.back(), peak_bit_corels.back() + n_keys);
