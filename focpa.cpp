@@ -286,7 +286,7 @@ int first_order(Config & conf)
         }
       }
 
-      if (bit == bitsperbyte-1) {
+      if ( (bit == bitsperbyte-1) || (bit == -1) ) {
         int nbest=10; // TODO: make it a config parameter
         sort (sum_bit_corels.back(), sum_bit_corels.back() + n_keys);
         sort (peak_bit_corels.back(), peak_bit_corels.back() + n_keys);
