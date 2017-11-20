@@ -435,6 +435,11 @@ struct Config {
    * -1 = all
    */
   int8_t bitnum;
+  
+  /* The number of bits that we want to consider as a word for 
+   * the traces.
+   */
+  int word_length;
 
 };
 
@@ -520,7 +525,7 @@ size_t fload(const char str[], Type *** mem, int chunk_size, long int chunk_offs
   /* Like load_file but doens't allocate new memory each time.
    */
   template <class Type>
-int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
+int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length);
 
 /* Loads the file located at str in the 2D array mem, whose dimensions
  * are specified by n_rows and n_columns
