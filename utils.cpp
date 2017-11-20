@@ -297,7 +297,7 @@ int load_file_v_2(const char str[], Type *** mem, int n_rows, int n_columns, lon
 /* Like load_file but doens't allocate new memory each time.
  */
   template <class Type>
-int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, long int offset, int total_n_columns)
+int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length)
 {
   FILE * file = NULL;
   int i, res;
@@ -645,6 +645,7 @@ int load_config(Config & config, const char * conf_file)
   config.bitnum = -2;
   config.complete_correct_key = NULL;
   config.original_correct_key = NULL;
+  config.word_length = 1;
 
   while (getline(fin, line)) {
     if (line[0] == '#'){
@@ -813,7 +814,9 @@ int load_config(Config & config, const char * conf_file)
       }
       //printf("%s %li %f\n", tmp.c_str(), tmp.size(), atof(tmp.substr(0, tmp.size() - 1).c_str()));
       config.memory = (long int)(atof(tmp.substr(0, tmp.size() - 1).c_str())*suffix);
-    }
+    } else if (line.find("word_length") != string::npos) {
+      config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
+	}
 
   }
 
@@ -974,7 +977,7 @@ void print_config(Config &conf)
   else if(conf.memory > MEGA)
     printf("\tMemory:\t\t\t %.2fMB\n", conf.memory/MEGA);
   printf("\tKeep track of:\t\t %i\n", conf.top);
-
+  printf("\tWord length:\t\t %i\n", conf.word_length);
 
   if (conf.sep == "") printf("\tSeparator :\t\t STANDARD\n");
   else printf("\tSeparator :\t\t %s\n", conf.sep.c_str());
@@ -1036,11 +1039,11 @@ template int import_matrices(uint8_t *** mem, Matrix * matrices, unsigned int n_
 template size_t fload(const char str[], float *** mem, int chunk_size, long int chunk_offset, int n_columns, long int col_offset, int tot_n_cols);
 template size_t fload(const char str[], int8_t *** mem, int chunk_size, long int chunk_offset, int n_columns, long int col_offset, int tot_n_cols);
 
-template int load_file_v_1(const char str[], float *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
-template int load_file_v_1(const char str[], double *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
-template int load_file_v_1(const char str[], int8_t *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
-template int load_file_v_1(const char str[], uint8_t *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
-template int load_file_v_1(const char str[], int *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
+template int load_file_v_1(const char str[], float *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length);
+template int load_file_v_1(const char str[], double *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length);
+template int load_file_v_1(const char str[], int8_t *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length);
+template int load_file_v_1(const char str[], uint8_t *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length);
+template int load_file_v_1(const char str[], int *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length);
 
 template int load_file(const char str[], float *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
 template int load_file(const char str[], double *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
