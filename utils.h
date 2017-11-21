@@ -436,8 +436,11 @@ struct Config {
    */
   int8_t bitnum;
   
-  /* The number of bits that we want to consider as a word for 
-   * the traces.
+  /* The number of bits that we want to consider as a word for the traces.
+   * The number of samples in n_samples must not be altered upon changing the word length
+   * in the configuration file since this is already accounted for.
+   *
+   * "default" = use type_trace defined length
    */
   int word_length;
 
