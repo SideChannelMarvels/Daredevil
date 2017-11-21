@@ -877,7 +877,6 @@ int load_config(Config & config, const char * conf_file)
         tot_col_guesses = (orig_sample_size * tot_col_guesses) / config.word_length;
       }
     }
-
   }
 
   /* config.correct = -1 is the default value. It stays -1 if no key is
