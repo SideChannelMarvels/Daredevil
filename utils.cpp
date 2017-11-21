@@ -857,17 +857,17 @@ int load_config(Config & config, const char * conf_file)
         config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
         // verify whether words of this length fit into the trace type that was given
         int orig_sample_size;
-        if (config.type_trace == "f") {
+        if (strcmp(config.type_trace, 'f') == 0) {
             orig_sample_size = sizeof(float);
-        } else if (config.type_trace == "u") {
+        } else if (strcmp(config.type_trace, 'u') == 0) {
             orig_sample_size = sizeof(uint8_t);
-        } else if (config.type_trace == "d") {
+        } else if (strcmp(config.type_trace, 'd') == 0) {
             orig_sample_size = sizeof(double);
-        } else if (config.type_trace == "i") {
+        } else if (strcmp(config.type_trace, 'i') == 0) {
             orig_sample_size = sizeof(int8_t);
         }
         if (config.word_length > orig_sample_size * 8) {
-            printf(stderr, "Error: Word length is too large for the trace type. %d was chosen.\n", config.word_length);
+            fprintf(stderr, "Error: Word length is too large for the trace type. %d was chosen.\n", config.word_length);
             return -1;
         }
         // Divide the number of samples by the word length such that the dimensions of the matrices
