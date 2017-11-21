@@ -856,14 +856,14 @@ int load_config(Config & config, const char * conf_file)
       } else {
         config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
         // verify whether words of this length fit into the trace type that was given
-        int orig_sample_size;
-        if (strcmp(config.type_trace, 'f') == 0) {
+        int orig_sample_size = 0;
+        if (config.type_trace == 'f') {
             orig_sample_size = sizeof(float);
-        } else if (strcmp(config.type_trace, 'u') == 0) {
+        } else if (config.type_trace == 'u') {
             orig_sample_size = sizeof(uint8_t);
-        } else if (strcmp(config.type_trace, 'd') == 0) {
+        } else if (config.type_trace == 'd') {
             orig_sample_size = sizeof(double);
-        } else if (strcmp(config.type_trace, 'i') == 0) {
+        } else if (config.type_trace == 'i') {
             orig_sample_size = sizeof(int8_t);
         }
         if (config.word_length > orig_sample_size * 8) {
