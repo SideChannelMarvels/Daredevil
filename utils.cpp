@@ -301,6 +301,9 @@ int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, lon
 {
   FILE * file = NULL;
   int i, res;
+  long int offset_byte = floor((offset * word_length) / 8);
+  int offset_bit = (offset * word_length) % 8;
+  char current_byte = NULL;
 
   if (n_columns <= 0){
     fprintf (stderr, "Error: Invalid parameters: n_columns <= 0.\n");
@@ -332,7 +335,13 @@ int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, lon
   }
 
   //res = fseek(file, offset, SEEK_SET);
-  res = fseek(file, offset*sizeof(Type), SEEK_CUR);
+  // Move filepointer to the position of the sample at the given offset
+  if (word_length == -1) { // use default
+    res = fseek(file, offset*sizeof(Type), SEEK_CUR);
+  } else {
+    res = fseek(file, offset_byte, SEEK_CUR);
+    current_byte = fgetc(file);
+  }
   if (res != 0) {
     fprintf (stderr, "Error: fseek != 0 when reading file %s\n", str);
     return -1;
@@ -344,19 +353,44 @@ int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, lon
       return -1;
     }
 
-    res = fread ((*mem)[i], sizeof(Type), n_columns, file);
-    //res = fread ((*mem + i), sizeof(Type), n_columns, file);
-    if (res < n_columns) {
-      fprintf (stderr, "Error: fread < 0 when reading file %s\n", str);
-      return -1;
+    // Read the requested columns into mem
+    if (word_length == -1) {
+      res = fread ((*mem)[i], sizeof(Type), n_columns, file);
+      if (res < n_columns) {
+        fprintf (stderr, "Error: fread < 0 when reading file %s\n", str);
+        return -1;
+      }
+    } else {
+      for (int col = 0; col < n_columns; col++) {
+        Type sample = 0;
+        for (int b = 0; b < word_length; b++) {
+          if (offset_bit > 7) {
+            current_byte = fgetc(file);
+            offset_bit = 0;
+          }
+          int bit = ((current_byte >> (7-offset_bit)) & 1);
+          if (bit == 1)
+            sample |= (1 << b);
+          offset_bit++;
+        }
+        (*mem)[i] = sample;
+      }
     }
 
     /* Used when importing a subset of the time samples.
      */
-    res = fseek(file, (total_n_columns - n_columns)*sizeof(Type), SEEK_CUR);
-    if (res != 0) {
-      fprintf (stderr, "Error: fseek != 0 when reading file %s\n", str);
-      return -1;
+    if (word_length == -1) {
+      res = fseek(file, (total_n_columns - n_columns)*sizeof(Type), SEEK_CUR);
+      if (res != 0) {
+        fprintf (stderr, "Error: fseek != 0 when reading file %s\n", str);
+        return -1;
+      }
+    } else {
+      res = fseek(file, floor((total_n_columns - n_columns)*word_length/8), SEEK_CUR);
+      if (res != 0) {
+        fprintf (stderr, "Error: fseek != 0 when reading file %s\n", str);
+        return -1;
+      }
     }
   }
 
@@ -645,7 +679,7 @@ int load_config(Config & config, const char * conf_file)
   config.bitnum = -2;
   config.complete_correct_key = NULL;
   config.original_correct_key = NULL;
-  config.word_length = 1;
+  config.word_length = -1;
 
   while (getline(fin, line)) {
     if (line[0] == '#'){
@@ -816,8 +850,33 @@ int load_config(Config & config, const char * conf_file)
       config.memory = (long int)(atof(tmp.substr(0, tmp.size() - 1).c_str())*suffix);
     } else if (line.find("word_length") != string::npos) {
       config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
-	}
-
+      string tmp = line.substr(line.find("=") + 1);
+      if (!tmp.compare("default")) {
+        config.word_length = -1;
+      } else {
+        config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
+        // verify whether words of this length fit into the trace type that was given
+        int orig_sample_size;
+        if (type_trace == "f") {
+            orig_sample_size = sizeof(float);
+        } else if (type_trace == "u") {
+            orig_sample_size = sizeof(uint8_t);
+        } else if (trace_type == "d") {
+            orig_sample_size = sizeof(double);
+        } else if (trace_type == "i") {
+            orig_sample_size = sizeof(int8_t);
+        }
+        if (config.word_length > orig_sample_size * 8) {
+            printf(stderr, "Error: Word length is too large for the trace type. %d was chosen.\n", word_length);
+            return -1;
+        }
+        // Divide the number of samples by the word length such that the dimensions of the matrices
+        // in the CPA attack are still fine.
+        config.n_samples = (orig_sample_size * n_samples) / config.word_length;
+        tot_col_traces = (orig_sample_size * tot_col_traces) / config.word_length;
+        tot_col_guesses = (orig_sample_size * tot_col_guesses) / config.word_length;
+      }
+    }
   }
 
   /* config.correct = -1 is the default value. It stays -1 if no key is
