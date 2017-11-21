@@ -303,7 +303,7 @@ int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, lon
   int i, res;
   long int offset_byte = floor((offset * word_length) / 8);
   int offset_bit = (offset * word_length) % 8;
-  char current_byte = NULL;
+  char current_byte = 0;
 
   if (n_columns <= 0){
     fprintf (stderr, "Error: Invalid parameters: n_columns <= 0.\n");
@@ -362,7 +362,7 @@ int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, lon
       }
     } else {
       for (int col = 0; col < n_columns; col++) {
-        Type sample = 0;
+        int sample = 0;
         for (int b = 0; b < word_length; b++) {
           if (offset_bit > 7) {
             current_byte = fgetc(file);
@@ -373,7 +373,7 @@ int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, lon
             sample |= (1 << b);
           offset_bit++;
         }
-        (*mem)[i] = sample;
+        (*mem)[i][col] = (Type) sample;
       }
     }
 
@@ -857,22 +857,22 @@ int load_config(Config & config, const char * conf_file)
         config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
         // verify whether words of this length fit into the trace type that was given
         int orig_sample_size;
-        if (type_trace == "f") {
+        if (config.type_trace == "f") {
             orig_sample_size = sizeof(float);
-        } else if (type_trace == "u") {
+        } else if (config.type_trace == "u") {
             orig_sample_size = sizeof(uint8_t);
-        } else if (trace_type == "d") {
+        } else if (config.type_trace == "d") {
             orig_sample_size = sizeof(double);
-        } else if (trace_type == "i") {
+        } else if (config.type_trace == "i") {
             orig_sample_size = sizeof(int8_t);
         }
         if (config.word_length > orig_sample_size * 8) {
-            printf(stderr, "Error: Word length is too large for the trace type. %d was chosen.\n", word_length);
+            printf(stderr, "Error: Word length is too large for the trace type. %d was chosen.\n", config.word_length);
             return -1;
         }
         // Divide the number of samples by the word length such that the dimensions of the matrices
         // in the CPA attack are still fine.
-        config.n_samples = (orig_sample_size * n_samples) / config.word_length;
+        config.n_samples = (orig_sample_size * config.n_samples) / config.word_length;
         tot_col_traces = (orig_sample_size * tot_col_traces) / config.word_length;
         tot_col_guesses = (orig_sample_size * tot_col_guesses) / config.word_length;
       }
