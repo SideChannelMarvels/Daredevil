@@ -985,6 +985,7 @@ void print_config(Config &conf)
   printf("\tTotal number traces:\t %i\n", conf.total_n_traces);
   printf("\tTarget number traces:\t %i\n", conf.n_traces);
   printf("\tTotal number keys:\t %i\n", conf.total_n_keys);
+  printf("\tWord length:\t\t %i\n", conf.word_length);
 
   printf("\tAttack order:\t\t %i\n", conf.attack_order);
 
@@ -1036,7 +1037,6 @@ void print_config(Config &conf)
   else if(conf.memory > MEGA)
     printf("\tMemory:\t\t\t %.2fMB\n", conf.memory/MEGA);
   printf("\tKeep track of:\t\t %i\n", conf.top);
-  printf("\tWord length:\t\t %i\n", conf.word_length);
 
   if (conf.sep == "") printf("\tSeparator :\t\t STANDARD\n");
   else printf("\tSeparator :\t\t %s\n", conf.sep.c_str());
