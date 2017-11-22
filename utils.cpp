@@ -651,7 +651,8 @@ int load_config(Config & config, const char * conf_file)
   int tot_row_traces = 0,
       tot_col_traces = 0,
       tot_row_guesses = 0,
-      tot_col_guesses = 0;
+      tot_col_guesses = 0,
+      orig_sample_size = 0;
 
   config.n_threads = 4;
   config.index_sample = 0;
@@ -706,6 +707,35 @@ int load_config(Config & config, const char * conf_file)
         string type = line.substr(line.find("=") + 1);
         config.type_guess = type[0];
       }
+    }else if (line.find("nsamples") != string::npos) {
+      config.n_samples = atoi(line.substr(line.find("=") + 1).c_str());
+    } else if (line.find("word_length") != string::npos) {
+      config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
+      string tmp = line.substr(line.find("=") + 1);
+      if (!tmp.compare("default")) {
+        config.word_length = -1;
+      } else {
+        config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
+        // verify whether words of this length fit into the trace type that was given
+        if (config.type_trace == 'f') {
+            orig_sample_size = sizeof(float);
+        } else if (config.type_trace == 'u') {
+            orig_sample_size = sizeof(uint8_t);
+        } else if (config.type_trace == 'd') {
+            orig_sample_size = sizeof(double);
+        } else if (config.type_trace == 'i') {
+            orig_sample_size = sizeof(int8_t);
+        }
+        if (config.word_length > orig_sample_size * 8) {
+            fprintf(stderr, "Error: Word length is too large for the trace type. %d was chosen.\n", config.word_length);
+            return -1;
+        }
+        // Divide the number of samples by the word length such that the dimensions of the matrices
+        // in the CPA attack are still fine.
+        config.n_samples = (orig_sample_size * config.n_samples) / config.word_length;
+        tot_col_traces = (orig_sample_size * tot_col_traces) / config.word_length;
+        tot_col_guesses = (orig_sample_size * tot_col_guesses) / config.word_length;
+      }
     }else if (line.find("files") != string::npos) {
       if (traces){
         config.n_file_trace = atoi(line.substr(line.find("=") + 1).c_str());
@@ -736,6 +766,8 @@ int load_config(Config & config, const char * conf_file)
       tmp = tmp.substr(tmp.find(" ") + 1);
       n_columns = atoi(tmp.c_str());
       if (traces) {
+        // adapt n_columns for word length
+        n_columns = (orig_sample_size * n_columns) / config.word_length;
         config.traces[i_traces] = Matrix(p, n_rows, n_columns);
         tot_row_traces += n_rows;
         tot_col_traces += n_columns;
@@ -750,8 +782,6 @@ int load_config(Config & config, const char * conf_file)
       config.n_threads = atoi(line.substr(line.find("=") + 1).c_str());
     }else if (line.find("index") != string::npos) {
       config.index_sample = atoi(line.substr(line.find("=") + 1).c_str());
-    }else if (line.find("nsamples") != string::npos) {
-      config.n_samples = atoi(line.substr(line.find("=") + 1).c_str());
     }else if (line.find("transpose") != string::npos) {
       string tmp = line.substr(line.find("=") + 1);
       if(traces)
@@ -848,34 +878,6 @@ int load_config(Config & config, const char * conf_file)
       }
       //printf("%s %li %f\n", tmp.c_str(), tmp.size(), atof(tmp.substr(0, tmp.size() - 1).c_str()));
       config.memory = (long int)(atof(tmp.substr(0, tmp.size() - 1).c_str())*suffix);
-    } else if (line.find("word_length") != string::npos) {
-      config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
-      string tmp = line.substr(line.find("=") + 1);
-      if (!tmp.compare("default")) {
-        config.word_length = -1;
-      } else {
-        config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
-        // verify whether words of this length fit into the trace type that was given
-        int orig_sample_size = 0;
-        if (config.type_trace == 'f') {
-            orig_sample_size = sizeof(float);
-        } else if (config.type_trace == 'u') {
-            orig_sample_size = sizeof(uint8_t);
-        } else if (config.type_trace == 'd') {
-            orig_sample_size = sizeof(double);
-        } else if (config.type_trace == 'i') {
-            orig_sample_size = sizeof(int8_t);
-        }
-        if (config.word_length > orig_sample_size * 8) {
-            fprintf(stderr, "Error: Word length is too large for the trace type. %d was chosen.\n", config.word_length);
-            return -1;
-        }
-        // Divide the number of samples by the word length such that the dimensions of the matrices
-        // in the CPA attack are still fine.
-        config.n_samples = (orig_sample_size * config.n_samples) / config.word_length;
-        tot_col_traces = (orig_sample_size * tot_col_traces) / config.word_length;
-        tot_col_guesses = (orig_sample_size * tot_col_guesses) / config.word_length;
-      }
     }
   }
 
@@ -985,7 +987,6 @@ void print_config(Config &conf)
   printf("\tTotal number traces:\t %i\n", conf.total_n_traces);
   printf("\tTarget number traces:\t %i\n", conf.n_traces);
   printf("\tTotal number keys:\t %i\n", conf.total_n_keys);
-  printf("\tWord length:\t\t %i\n", conf.word_length);
 
   printf("\tAttack order:\t\t %i\n", conf.attack_order);
 
@@ -1041,6 +1042,7 @@ void print_config(Config &conf)
   if (conf.sep == "") printf("\tSeparator :\t\t STANDARD\n");
   else printf("\tSeparator :\t\t %s\n", conf.sep.c_str());
   printf("\n  [TRACES]\n");
+  printf("\tWord length:\t\t %i\n", conf.word_length);
   printf("\tTraces files:\t\t %i\n", conf.n_file_trace);
   printf("\tTraces type:\t\t %c\n", conf.type_trace);
   printf("\tTranspose traces:\t %s\n", conf.transpose_traces ? "True" : "False");
