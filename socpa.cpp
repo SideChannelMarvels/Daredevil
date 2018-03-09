@@ -278,9 +278,13 @@ int second_order(Config & conf)
       else correct_key = conf.correct_key;
       pqueue->print(conf.top, correct_key);
       print_top_r(top_r_by_key, n_keys, correct_key);
-    }else {
+    }else if (conf.correct_key != -1) {
       if (conf.des_switch == DES_4_BITS) correct_key = get_4_middle_bits(conf.complete_correct_key[bn]);
       else correct_key = conf.complete_correct_key[bn];
+      print_top_r(top_r_by_key, n_keys, correct_key, conf.sep);
+    }
+    else {
+      correct_key = conf.correct_key;
       print_top_r(top_r_by_key, n_keys, correct_key, conf.sep);
     }
 
