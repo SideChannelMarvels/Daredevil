@@ -31,7 +31,7 @@
 #include "focpa.h"
 #include "socpa.h"
 
-extern pthread_mutex_t lock;
+extern pthread_mutex_t pt_lock;
 
 /* Implements first order CPA in a faster and multithreaded way on big files,
  * using the vertical partitioning approach.
@@ -124,7 +124,7 @@ int first_order(Config & conf)
   }
 
   FinalConfig<TypeTrace, TypeReturn, TypeGuess> fin_conf = FinalConfig<TypeTrace, TypeReturn, TypeGuess>(&mat_args, &conf, (void*)queues);
-  pthread_mutex_init(&lock, NULL);
+  pthread_mutex_init(&pt_lock, NULL);
 
   vector<CorrFirstOrder<TypeReturn>*> sum_bit_corels;
   vector<CorrFirstOrder<TypeReturn>*> peak_bit_corels;
@@ -368,7 +368,7 @@ int first_order(Config & conf)
   free_matrix(&traces, ncol);
   free_matrix(&tmp, max_n_rows);
   free_matrix(&fin_conf.mat_args->guess, n_keys);
-  pthread_mutex_destroy(&lock);
+  pthread_mutex_destroy(&pt_lock);
   return 0;
 }
 
@@ -420,7 +420,7 @@ void * correlation_first_order(void * args_in)
       q[k].key   = k;
     }
 
-    pthread_mutex_lock(&lock);
+    pthread_mutex_lock(&pt_lock);
     for (int key=0; key < n_keys; key++) {
       if (G->fin_conf->conf->key_size == 1)
         queues->pqueue->insert(q[key]);
@@ -428,7 +428,7 @@ void * correlation_first_order(void * args_in)
         queues->top_corr[key] = q[key];
       }
     }
-    pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&pt_lock);
   }
   free (q);
   return NULL;

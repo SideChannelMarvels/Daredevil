@@ -23,7 +23,7 @@
 #include "utils.h"
 #include "string.h"
 
-pthread_mutex_t lock;
+pthread_mutex_t pt_lock;
 
 /* Implements second order CPA in a faster and multithreaded way on big files.
  *
@@ -139,7 +139,7 @@ int second_order(Config & conf)
   }
 
   FinalConfig<TypeReturn, TypeReturn, TypeGuess> fin_conf = FinalConfig<TypeReturn, TypeReturn, TypeGuess>(&mat_args, &conf, (void*)queues);
-  pthread_mutex_init(&lock, NULL);
+  pthread_mutex_init(&pt_lock, NULL);
 
 
   /* We loop over all the key bytes.
@@ -312,7 +312,7 @@ int second_order(Config & conf)
   free_matrix(&traces, ncol);
   free_matrix(&tmp, max_n_rows);
   free_matrix(&fin_conf.mat_args->guess, n_keys);
-  pthread_mutex_destroy(&lock);
+  pthread_mutex_destroy(&pt_lock);
   return 0;
 }
 
@@ -489,7 +489,7 @@ void * second_order_correlation(void * args_in)
         q[k].time2 = j + first_sample + offset;
         q[k].key   = k;
       }
-      pthread_mutex_lock(&lock);
+      pthread_mutex_lock(&pt_lock);
       for (int key=0; key < n_keys; key++) {
         if (G->fin_conf->conf->key_size == 1)
           queues->pqueue->insert(q[key]);
@@ -497,7 +497,7 @@ void * second_order_correlation(void * args_in)
           queues->top_corr[key] = q[key];
         }
       }
-      pthread_mutex_unlock(&lock);
+      pthread_mutex_unlock(&pt_lock);
 
     }
   }
@@ -565,7 +565,7 @@ void * higher_moments_correlation(void * args_in)
         q[k].time2 = i + first_sample + offset;
         q[k].key   = k;
       }
-      pthread_mutex_lock(&lock);
+      pthread_mutex_lock(&pt_lock);
       for (int key=0; key < n_keys; key++) {
         if (G->fin_conf->conf->key_size == 1)
           queues->pqueue->insert(q[key]);
@@ -573,7 +573,7 @@ void * higher_moments_correlation(void * args_in)
           queues->top_corr[key] = q[key];
         }
       }
-      pthread_mutex_unlock(&lock);
+      pthread_mutex_unlock(&pt_lock);
 
 
   }
