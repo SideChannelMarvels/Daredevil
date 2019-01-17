@@ -28,7 +28,7 @@
  * des_switch is only used by DES
  */
 template <class TypeGuess>
-int construct_guess (TypeGuess ***guess, uint32_t alg, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t des_switch, uint16_t * sbox, uint32_t n_keys, int8_t bit) {
+int construct_guess (TypeGuess ***guess, uint32_t alg, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t des_switch, uint32_t * sbox, uint32_t n_keys, int8_t bit) {
   int ret;
 
   switch (alg) {
@@ -48,5 +48,5 @@ int construct_guess (TypeGuess ***guess, uint32_t alg, Matrix *m, uint32_t n_m, 
 
 }
 
-template int construct_guess (uint8_t ***guess, uint32_t alg, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t des_switch, uint16_t * sbox, uint32_t n_keys, int8_t bit);
+template int construct_guess (uint8_t ***guess, uint32_t alg, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t des_switch, uint32_t * sbox, uint32_t n_keys, int8_t bit);
 

@@ -41,6 +41,6 @@
 /* Given the messages stored in m, use the bytenum-th byte to construct
  * the guesses for round R at position pos for algorithm alg and store the guesses in guess.
  */
-template <class TypeGuess> int construct_guess (TypeGuess ***guess, uint32_t alg, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t pos, uint16_t * sbox, uint32_t n_keys, int8_t bit);
+template <class TypeGuess> int construct_guess (TypeGuess ***guess, uint32_t alg, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t pos, uint32_t * sbox, uint32_t n_keys, int8_t bit);
 
 #endif

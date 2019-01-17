@@ -27,7 +27,7 @@
 #define DES_4_BITS     3
 #define DES_6_BITS     4
 
-template <class TypeGuess> int construct_guess_DES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t pos, uint16_t * sbox, uint32_t n_keys, int8_t bit);
+template <class TypeGuess> int construct_guess_DES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t pos, uint32_t * sbox, uint32_t n_keys, int8_t bit);
 
 void convert_rkey(uint8_t rkey[6], uint8_t dst[8]);
 

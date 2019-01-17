@@ -32,11 +32,18 @@ uint8_t HW(uint16_t v)
   return c;
 }
 
+uint8_t HW32(uint32_t v)
+{
+  uint8_t c;                      // c accumulates the total bits set in v
+  for (c = 0; v; c++) v &= v - 1; // clear the least significant bit set
+  return c;
+}
+
 /* Given the messages (m), use the bytenum-th byte to construct
  * the guesses for round R with the specified sbox.
  */
   template <class TypeGuess>
-int construct_guess_AES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint16_t * sbox, uint32_t n_keys, int8_t bit) {
+int construct_guess_AES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t * sbox, uint32_t n_keys, int8_t bit) {
   TypeGuess **mem = NULL;
   uint32_t i, j, nrows = 0;
 
@@ -68,7 +75,9 @@ int construct_guess_AES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t b
   for (i=0; i < nrows; i++) {
     for (j=0; j < n_keys; j++) {
         if (bit == -1) { /* No individual bits. */
-          (*guess)[j][i] = HW ((TypeGuess) sbox[ (uint8_t) mem[i][bytenum] ^ j ]);
+          // (*guess)[j][i] = HW ((TypeGuess) sbox[ (uint8_t) mem[i][bytenum] ^ j ]);
+          int sbox_off = (bytenum % 4) * 256;
+          (*guess)[j][i] = HW32 (sbox[ sbox_off + (uint8_t) mem[i][bytenum] ^ j ]);
         } else if (bit >= 0 && bit < 8) {
           (*guess)[j][i] = (TypeGuess) ((sbox[ (uint8_t) mem[i][bytenum] ^ j ] >> bit)&1);
         }
@@ -79,6 +88,6 @@ int construct_guess_AES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t b
 }
 
 
-template int construct_guess_AES (uint8_t ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint16_t * sbox, uint32_t n_keys, int8_t bit);
-template int construct_guess_AES ( int8_t ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint16_t * sbox, uint32_t n_keys, int8_t bit);
+template int construct_guess_AES (uint8_t ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t * sbox, uint32_t n_keys, int8_t bit);
+template int construct_guess_AES ( int8_t ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t * sbox, uint32_t n_keys, int8_t bit);
 
