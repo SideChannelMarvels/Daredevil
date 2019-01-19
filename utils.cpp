@@ -489,9 +489,9 @@ string trim(const string& str,
  * The format of the sbox file can be seen in the multiple example
  * files provided.
  */
-int parse_sbox_file(const char * fname, uint32_t ** sbox)
+int parse_sbox_file(const char * fname, uint16_t ** sbox)
 {
-  vector <uint32_t> data;
+  vector <uint16_t> data;
   char altfname [1024];
   if (access( fname, F_OK ) != -1)
   {
@@ -535,7 +535,7 @@ int parse_sbox_file(const char * fname, uint32_t ** sbox)
     return -1;
   }
 
-  *sbox = (uint32_t *) malloc(data.size()*sizeof(uint32_t));
+  *sbox = (uint16_t *) malloc(data.size()*sizeof(uint16_t));
 
   if (*sbox == NULL){
     cerr << "[ERROR]: Allocating memory for lookup table" << endl;
@@ -543,7 +543,7 @@ int parse_sbox_file(const char * fname, uint32_t ** sbox)
     return -1;
   }
   int j = 0;
-  for( std::vector<uint32_t>::const_iterator i = data.begin(); i != data.end(); ++i){
+  for( std::vector<uint16_t>::const_iterator i = data.begin(); i != data.end(); ++i){
      (*sbox)[j] = *i;
      j++;
      //cout << *i << endl;

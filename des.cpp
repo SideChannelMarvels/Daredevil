@@ -300,7 +300,7 @@ int get_round_key(uint8_t * key, uint8_t * dst, uint8_t round)
   return 0;
 }
 
-template <class TypeGuess> int construct_guess_DES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t pos, uint32_t * sbox, uint32_t n_keys, int8_t bit)
+template <class TypeGuess> int construct_guess_DES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t pos, uint16_t * sbox, uint32_t n_keys, int8_t bit)
 {
 
   TypeGuess **mem = NULL;
@@ -417,4 +417,4 @@ template <class TypeGuess> int construct_guess_DES (TypeGuess ***guess, Matrix *
   return 0;
 }
 
-template int construct_guess_DES (uint8_t ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t pos, uint32_t * sbox, uint32_t n_keys, int8_t bit);
+template int construct_guess_DES (uint8_t ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t pos, uint16_t * sbox, uint32_t n_keys, int8_t bit);

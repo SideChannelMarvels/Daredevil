@@ -21,7 +21,7 @@
 #ifndef AES_H
 #define AES_H
 
-template <class TypeGuess> int construct_guess_AES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint32_t * sbox, uint32_t n_keys, int8_t bit);
+template <class TypeGuess> int construct_guess_AES (TypeGuess ***guess, Matrix *m, uint32_t n_m, uint32_t bytenum, uint32_t R, uint16_t * sbox, uint32_t n_keys, int8_t bit);
 
 uint8_t HW(uint16_t v);
 

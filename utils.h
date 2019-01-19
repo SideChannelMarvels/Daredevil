@@ -413,7 +413,7 @@ struct Config {
 
   /* The SBOX is specified.
    */
-  uint32_t * sbox;
+  uint16_t * sbox;
 
   /* Array to store the multiple sboxes.
    */
@@ -475,7 +475,7 @@ struct FirstOrderQueues {
 
 /* Parse a file describing an SBOX
  */
-int parse_sbox_file(const char * fname, uint32_t ** sbox);
+int parse_sbox_file(const char * fname, uint16_t ** sbox);
 
 /* Parse the command line arguments. For now, only supports the path to the
  * configuration file.
