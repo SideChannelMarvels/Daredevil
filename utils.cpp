@@ -297,10 +297,13 @@ int load_file_v_2(const char str[], Type *** mem, int n_rows, int n_columns, lon
 /* Like load_file but doens't allocate new memory each time.
  */
   template <class Type>
-int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, long int offset, int total_n_columns)
+int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length)
 {
   FILE * file = NULL;
   int i, res;
+  long int offset_byte = floor((offset * word_length) / 8);
+  int offset_bit = (offset * word_length) % 8;
+  char current_byte = 0;
 
   if (n_columns <= 0){
     fprintf (stderr, "Error: Invalid parameters: n_columns <= 0.\n");
@@ -332,7 +335,13 @@ int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, lon
   }
 
   //res = fseek(file, offset, SEEK_SET);
-  res = fseek(file, offset*sizeof(Type), SEEK_CUR);
+  // Move filepointer to the position of the sample at the given offset
+  if (word_length == -1) { // use default
+    res = fseek(file, offset*sizeof(Type), SEEK_CUR);
+  } else {
+    res = fseek(file, offset_byte, SEEK_CUR);
+    current_byte = fgetc(file);
+  }
   if (res != 0) {
     fprintf (stderr, "Error: fseek != 0 when reading file %s\n", str);
     return -1;
@@ -344,19 +353,44 @@ int load_file_v_1(const char str[], Type *** mem, int n_rows, int n_columns, lon
       return -1;
     }
 
-    res = fread ((*mem)[i], sizeof(Type), n_columns, file);
-    //res = fread ((*mem + i), sizeof(Type), n_columns, file);
-    if (res < n_columns) {
-      fprintf (stderr, "Error: fread < 0 when reading file %s\n", str);
-      return -1;
+    // Read the requested columns into mem
+    if (word_length == -1) {
+      res = fread ((*mem)[i], sizeof(Type), n_columns, file);
+      if (res < n_columns) {
+        fprintf (stderr, "Error: fread < 0 when reading file %s\n", str);
+        return -1;
+      }
+    } else {
+      for (int col = 0; col < n_columns; col++) {
+        int sample = 0;
+        for (int b = 0; b < word_length; b++) {
+          if (offset_bit > 7) {
+            current_byte = fgetc(file);
+            offset_bit = 0;
+          }
+          int bit = ((current_byte >> (7-offset_bit)) & 1);
+          if (bit == 1)
+            sample |= (1 << b);
+          offset_bit++;
+        }
+        (*mem)[i][col] = (Type) sample;
+      }
     }
 
     /* Used when importing a subset of the time samples.
      */
-    res = fseek(file, (total_n_columns - n_columns)*sizeof(Type), SEEK_CUR);
-    if (res != 0) {
-      fprintf (stderr, "Error: fseek != 0 when reading file %s\n", str);
-      return -1;
+    if (word_length == -1) {
+      res = fseek(file, (total_n_columns - n_columns)*sizeof(Type), SEEK_CUR);
+      if (res != 0) {
+        fprintf (stderr, "Error: fseek != 0 when reading file %s\n", str);
+        return -1;
+      }
+    } else {
+      res = fseek(file, floor((total_n_columns - n_columns)*word_length/8), SEEK_CUR);
+      if (res != 0) {
+        fprintf (stderr, "Error: fseek != 0 when reading file %s\n", str);
+        return -1;
+      }
     }
   }
 
@@ -617,7 +651,8 @@ int load_config(Config & config, const char * conf_file)
   int tot_row_traces = 0,
       tot_col_traces = 0,
       tot_row_guesses = 0,
-      tot_col_guesses = 0;
+      tot_col_guesses = 0,
+      orig_sample_size = 0;
 
   config.n_threads = 4;
   config.index_sample = 0;
@@ -645,6 +680,7 @@ int load_config(Config & config, const char * conf_file)
   config.bitnum = -2;
   config.complete_correct_key = NULL;
   config.original_correct_key = NULL;
+  config.word_length = -1;
 
   while (getline(fin, line)) {
     if (line[0] == '#'){
@@ -670,6 +706,35 @@ int load_config(Config & config, const char * conf_file)
       }else if (line.find("guess_type") != string::npos) {
         string type = line.substr(line.find("=") + 1);
         config.type_guess = type[0];
+      }
+    }else if (line.find("nsamples") != string::npos) {
+      config.n_samples = atoi(line.substr(line.find("=") + 1).c_str());
+    } else if (line.find("word_length") != string::npos) {
+      config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
+      string tmp = line.substr(line.find("=") + 1);
+      if (!tmp.compare("default")) {
+        config.word_length = -1;
+      } else {
+        config.word_length = atoi(line.substr(line.find("=") + 1).c_str());
+        // verify whether words of this length fit into the trace type that was given
+        if (config.type_trace == 'f') {
+            orig_sample_size = sizeof(float);
+        } else if (config.type_trace == 'u') {
+            orig_sample_size = sizeof(uint8_t);
+        } else if (config.type_trace == 'd') {
+            orig_sample_size = sizeof(double);
+        } else if (config.type_trace == 'i') {
+            orig_sample_size = sizeof(int8_t);
+        }
+        if (config.word_length > orig_sample_size * 8) {
+            fprintf(stderr, "Error: Word length is too large for the trace type. %d was chosen.\n", config.word_length);
+            return -1;
+        }
+        // Divide the number of samples by the word length such that the dimensions of the matrices
+        // in the CPA attack are still fine.
+        config.n_samples = (orig_sample_size * config.n_samples) / config.word_length;
+        tot_col_traces = (orig_sample_size * tot_col_traces) / config.word_length;
+        tot_col_guesses = (orig_sample_size * tot_col_guesses) / config.word_length;
       }
     }else if (line.find("files") != string::npos) {
       if (traces){
@@ -701,6 +766,8 @@ int load_config(Config & config, const char * conf_file)
       tmp = tmp.substr(tmp.find(" ") + 1);
       n_columns = atoi(tmp.c_str());
       if (traces) {
+        // adapt n_columns for word length
+        n_columns = (orig_sample_size * n_columns) / config.word_length;
         config.traces[i_traces] = Matrix(p, n_rows, n_columns);
         tot_row_traces += n_rows;
         tot_col_traces += n_columns;
@@ -715,8 +782,6 @@ int load_config(Config & config, const char * conf_file)
       config.n_threads = atoi(line.substr(line.find("=") + 1).c_str());
     }else if (line.find("index") != string::npos) {
       config.index_sample = atoi(line.substr(line.find("=") + 1).c_str());
-    }else if (line.find("nsamples") != string::npos) {
-      config.n_samples = atoi(line.substr(line.find("=") + 1).c_str());
     }else if (line.find("transpose") != string::npos) {
       string tmp = line.substr(line.find("=") + 1);
       if(traces)
@@ -814,7 +879,6 @@ int load_config(Config & config, const char * conf_file)
       //printf("%s %li %f\n", tmp.c_str(), tmp.size(), atof(tmp.substr(0, tmp.size() - 1).c_str()));
       config.memory = (long int)(atof(tmp.substr(0, tmp.size() - 1).c_str())*suffix);
     }
-
   }
 
   /* config.correct = -1 is the default value. It stays -1 if no key is
@@ -975,10 +1039,10 @@ void print_config(Config &conf)
     printf("\tMemory:\t\t\t %.2fMB\n", conf.memory/MEGA);
   printf("\tKeep track of:\t\t %i\n", conf.top);
 
-
   if (conf.sep == "") printf("\tSeparator :\t\t STANDARD\n");
   else printf("\tSeparator :\t\t %s\n", conf.sep.c_str());
   printf("\n  [TRACES]\n");
+  printf("\tWord length:\t\t %i\n", conf.word_length);
   printf("\tTraces files:\t\t %i\n", conf.n_file_trace);
   printf("\tTraces type:\t\t %c\n", conf.type_trace);
   printf("\tTranspose traces:\t %s\n", conf.transpose_traces ? "True" : "False");
@@ -1036,11 +1100,11 @@ template int import_matrices(uint8_t *** mem, Matrix * matrices, unsigned int n_
 template size_t fload(const char str[], float *** mem, int chunk_size, long int chunk_offset, int n_columns, long int col_offset, int tot_n_cols);
 template size_t fload(const char str[], int8_t *** mem, int chunk_size, long int chunk_offset, int n_columns, long int col_offset, int tot_n_cols);
 
-template int load_file_v_1(const char str[], float *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
-template int load_file_v_1(const char str[], double *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
-template int load_file_v_1(const char str[], int8_t *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
-template int load_file_v_1(const char str[], uint8_t *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
-template int load_file_v_1(const char str[], int *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
+template int load_file_v_1(const char str[], float *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length);
+template int load_file_v_1(const char str[], double *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length);
+template int load_file_v_1(const char str[], int8_t *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length);
+template int load_file_v_1(const char str[], uint8_t *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length);
+template int load_file_v_1(const char str[], int *** mem, int n_rows, int n_columns, long int offset, int total_n_columns, int word_length);
 
 template int load_file(const char str[], float *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
 template int load_file(const char str[], double *** mem, int n_rows, int n_columns, long int offset, int total_n_columns);
