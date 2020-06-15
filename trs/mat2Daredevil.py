@@ -6,10 +6,15 @@
 # Include library to manipulate Matlab MAT files.
 # Documentation can be found at:
 # https://scipy-cookbook.readthedocs.io/items/Reading_mat_files.html
-docs.io/items/Reading_mat_files.html
+
 from scipy.io import loadmat
 
 # Include library to manipulate Riscure TRS files.
+# The trsfile package can be either found at its github page:
+#   https://github.com/Riscure/python-trsfile
+# and in the pip3 installer:
+#   pip3 install trsfile
+
 import os, trsfile
 from trsfile import trs_open, Trace, SampleCoding, TracePadding, Header
 

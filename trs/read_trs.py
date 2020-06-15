@@ -1,7 +1,13 @@
 #!/usr/bin/python3
-import trsfile
 
 # sample code to read a TRS file and show its contents.
+
+# The trsfile package can be either found at its github page:
+#   https://github.com/Riscure/python-trsfile
+# and in the pip3 installer:
+#   pip3 install trsfile
+
+import trsfile
 
 with trsfile.open('trace-set.trs', 'r') as traces:
 	# Show all headers

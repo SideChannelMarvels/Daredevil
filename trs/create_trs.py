@@ -2,7 +2,11 @@
 
 # This is a sample script to create or extend Riscure TRS files, using
 # the python library provided by Riscure.
-
+#
+# The trsfile package can be either found at its github page:
+#   https://github.com/Riscure/python-trsfile
+# and in the pip3 installer:
+#   pip3 install trsfile
 
 import random, os, trsfile
 from trsfile import trs_open, Trace, SampleCoding, TracePadding, Header
