@@ -50,6 +50,7 @@ int first_order(Config & conf)
       nmat = conf.n_file_trace,
       nrows = conf.total_n_traces,
       ncol = min(get_ncol<TypeTrace>(memory-(nrows*n_keys*sizeof(TypeGuess)), nrows), n_samples),
+	  word_length = conf.word_length,
       col_incr = ncol,
       col_offset = 0,
       row_offset = 0,
@@ -201,7 +202,7 @@ int first_order(Config & conf)
           cur_n_rows = conf.traces[i].n_rows;
           cur_n_cols = conf.traces[i].n_columns;
 
-          res = load_file_v_1(conf.traces[i].filename, &tmp, cur_n_rows, to_load, conf.index_sample + sample_offset + row_offset, cur_n_cols);
+          res = load_file_v_1(conf.traces[i].filename, &tmp, cur_n_rows, to_load, conf.index_sample + sample_offset + row_offset, cur_n_cols, word_length);
           if (res != 0) {
             fprintf (stderr, "[ERROR] Loading file.\n");
             return -1;
